@@ -516,7 +516,7 @@ procdump(void)
   char *state;
   uint pc[10];
 
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
     if(p->state == UNUSED)
       continue;
     if(p->state >= 0 && p->state < NELEM(states) && states[p->state])
@@ -531,4 +531,63 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+// TODO:
+int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
+
+  int i, pid;
+  struct proc *np;
+  struct proc *curproc = myproc();
+
+  // Allocate process.
+  if((np = allocproc()) == 0)
+    return -1;
+  
+  // check stack pointer
+  if ((((uint)stack % PGSIZE) != 0) || ((curproc->sz - (uint)stack) < PGSIZE)) {
+    return -1;
+  }
+
+  // copy process page directory
+  np->pgdir = curproc->pgdir;
+
+  // Copy Process Details To Thread
+  np->sz = curproc->sz;
+  np->parent = curproc;
+  *np->tf = *curproc->tf;
+
+  // ??
+  // 8bytes ->
+  // 12 -> 3args x 4
+  // 
+  int ustack[3];
+  ustack[0] = 0xffffffff;
+  ustack[1] = (uint)arg1;
+  ustack[2] = (uint)arg2;
+  uint stack_pointer = (uint)stack + PGSIZE - 12;
+
+  if (copyout(np->pgdir, stack_pointer, ustack, 12) < 0) {
+    return -1;
+  }
+  
+  // FROM FORK(): Clear %eax so that fork returns 0 in the child.
+  np->tf->eax = 0;
+
+  for(i = 0; i < NOFILE; i++)
+    if(curproc->ofile[i])
+      np->ofile[i] = filedup(curproc->ofile[i]);
+  np->cwd = idup(curproc->cwd);
+
+  safestrcpy(np->name, curproc->name, sizeof(curproc->name));
+  pid = np->pid;
+  acquire(&ptable.lock);
+  np->state = RUNNABLE;
+  release(&ptable.lock);
+
+  return pid;
+}
+
+int join(void **stack){
+  return 0;
 }
