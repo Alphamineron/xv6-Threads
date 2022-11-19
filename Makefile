@@ -195,6 +195,14 @@ clean:
 	xv6memfs.img mkfs .gdbinit \
 	$(UPROGS)
 
+hardclean:
+	rm -rf *.tex *.dvi *.idx *.aux *.log *.ind *.ilg test_*.c \
+	*.o *.d *.asm *.sym vectors.S bootblock entryother \
+	initcode initcode.out kernel xv6.img fs.img kernelmemfs \
+	xv6memfs.img mkfs .gdbinit Makefile.test tests-out/ \
+	$(UPROGS)
+
+
 # make a printout
 FILES = $(shell grep -v '^\#' runoff.list)
 PRINT = runoff.list runoff.spec README toc.hdr toc.ftr $(FILES)
