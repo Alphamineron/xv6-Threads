@@ -196,7 +196,7 @@ clean:
 	$(UPROGS)
 
 hardclean:
-	rm -rf *.tex *.dvi *.idx *.aux *.log *.ind *.ilg test_*.c \
+	rm -rf *.tex *.dvi *.idx *.aux *.log *.ind *.ilg test_*.c _test_* \
 	*.o *.d *.asm *.sym vectors.S bootblock entryother \
 	initcode initcode.out kernel xv6.img fs.img kernelmemfs \
 	xv6memfs.img mkfs .gdbinit Makefile.test tests-out/ \
