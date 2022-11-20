@@ -72,8 +72,10 @@ exec(char *path, char **argv)
   for(argc = 0; argv[argc]; argc++) {
     if(argc >= MAXARG)
       goto bad;
-    sp = (sp - (strlen(argv[argc]) + 1)) & ~3;
-    if(copyout(pgdir, sp, argv[argc], strlen(argv[argc]) + 1) < 0)
+    sp = (sp - (strlen(argv[argc]) + 1)) & ~3;  // Push back stack to make space for arg str, 
+                                                // then make it a multiple of 8
+    if(copyout(pgdir, sp, argv[argc], strlen(argv[argc]) + 1) < 0)  // Put argv[argc] into the VA defined by sp, 
+                                                                    // mapping to the process pgdir
       goto bad;
     ustack[3+argc] = sp;
   }
@@ -81,7 +83,7 @@ exec(char *path, char **argv)
 
   ustack[0] = 0xffffffff;  // fake return PC
   ustack[1] = argc;
-  ustack[2] = sp - (argc+1)*4;  // argv pointer
+  ustack[2] = sp - (argc+1)*4;  // argv pointer (size of argv since sizeof(int)=4)
 
   sp -= (3+argc+1) * 4;
   if(copyout(pgdir, sp, ustack, (3+argc+1)*4) < 0)
