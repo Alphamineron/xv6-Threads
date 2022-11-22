@@ -104,3 +104,28 @@ memmove(void *vdst, const void *vsrc, int n)
     *dst++ = *src++;
   return vdst;
 }
+
+// ========================
+// THREADING LIBRARY CODE
+// ========================
+
+void lock_acquire(lock_t* lock) {
+  while (lock->value);
+  lock->value = 1;
+}
+
+void lock_release(lock_t* lock) {
+  lock->value = 0;
+}
+
+void lock_init(lock_t* lock) {
+  lock->value = 0;
+}
+
+int thread_create(void (*start_routine)(void *, void *), void *arg1, void *arg2) {
+  return 0;
+}
+
+int thread_join() {
+  return 0;
+}
