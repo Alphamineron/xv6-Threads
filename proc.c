@@ -552,27 +552,51 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
   // copy process page directory
   np->pgdir = curproc->pgdir;
 
-  // Copy Process Details To Thread
+  cprintf("\n\n\t\nnp->tf->eip\t\t\t\t\n\n\n");
+
+  // 8bytes ->
+  // 12 -> 3 args x 4
+
+  // uint argc = 2;
+  // uint sp, ustack[3 + argc + 1];
+  // sp = stack;
+
+  // // Push argument strings, prepare rest of stack in ustack.
+  // for(argc = 0; argv[argc]; argc++) {
+  //   sp = (sp - (strlen(argv[argc]) + 1)) & ~3;  // Push back stack to make space for arg str, 
+  //                                               // then make it a multiple of 8
+  //   if(copyout(curproc->pgdir, sp, argv[argc], strlen(argv[argc]) + 1) < 0)  // Put argv[argc] into the VA defined by sp, 
+  //                                                                   // mapping to the process pgdir
+  //     return -1;
+  //   ustack[3+argc] = sp;
+  // }
+  // ustack[3+argc] = 0;
+
+  // // ADDED
+  // int ustack[3];
+  // uint sp = (uint)stack + PGSIZE - 12;
+
+  // ustack[0] = 0xffffffff;   // fake return PC
+  // ustack[1] = (uint)arg1;
+  // ustack[2] = (uint)arg2;
+  // // ustack[1] = argc;
+  // // ustack[2] = sp - (argc+1)*4;  // argv pointer (size of argv since sizeof(int)=4)
+
+  // //sp -= (3+argc+1) * 4;
+  // //sp -= 12;
+  // // if(copyout(np->pgdir, sp, ustack, (3+argc+1)*4) < 0)
+  // if(copyout(np->pgdir, sp, ustack, 12) < 0)
+  //   return -1;
+
+  // Copy Process Details To Thread 
   np->sz = curproc->sz;
   np->parent = curproc;
   *np->tf = *curproc->tf;
 
-  // ??
-  // 8bytes ->
-  // 12 -> 3args x 4
-  // 
-  int ustack[3];
-  ustack[0] = 0xffffffff;
-  ustack[1] = (uint)arg1;
-  ustack[2] = (uint)arg2;
-  uint stack_pointer = (uint)stack + PGSIZE - 12;
-
-  if (copyout(np->pgdir, stack_pointer, ustack, 12) < 0) {
-    return -1;
-  }
-  
   // FROM FORK(): Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
+  // np->tf->eip = (uint)fcn;
+  // np->tf->esp = (uint)stack;
 
   for(i = 0; i < NOFILE; i++)
     if(curproc->ofile[i])
