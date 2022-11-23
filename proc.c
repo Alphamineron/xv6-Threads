@@ -552,39 +552,17 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
   // copy process page directory
   np->pgdir = curproc->pgdir;
 
-
-  // 8bytes ->
-  // 12 -> 3 args x 4
-
-  // uint argc = 2;
-  // uint sp, ustack[3 + argc + 1];
-  // sp = stack;
-
-  // // Push argument strings, prepare rest of stack in ustack.
-  // for(argc = 0; argv[argc]; argc++) {
-  //   sp = (sp - (strlen(argv[argc]) + 1)) & ~3;  // Push back stack to make space for arg str, 
-  //                                               // then make it a multiple of 8
-  //   if(copyout(curproc->pgdir, sp, argv[argc], strlen(argv[argc]) + 1) < 0)  // Put argv[argc] into the VA defined by sp, 
-  //                                                                   // mapping to the process pgdir
-  //     return -1;
-  //   ustack[3+argc] = sp;
-  // }
-  // ustack[3+argc] = 0;
-
-  // // ADDED
-  int ustack[3];
-  uint sp = (uint)stack + PGSIZE - 12;
+  uint ustack[4];
+  // uint sp = (uint)stack + PGSIZE;
 
   ustack[0] = 0xffffffff;   // fake return PC
   ustack[1] = (uint)arg1;
   ustack[2] = (uint)arg2;
-  // ustack[1] = argc;
-  // ustack[2] = sp - (argc+1)*4;  // argv pointer (size of argv since sizeof(int)=4)
+  ustack[3] = 0;
+  
+  stack -= 16;
 
-  // //sp -= (3+argc+1) * 4;
-  // //sp -= 12;
-  // // if(copyout(np->pgdir, sp, ustack, (3+argc+1)*4) < 0)
-  if(copyout(np->pgdir, sp, ustack, 12) < 0)
+  if(copyout(np->pgdir, (uint)stack, ustack, 16) < 0)
     return -1;
 
   // Copy Process Details To Thread 
@@ -622,10 +600,7 @@ int join(void **stack){
     havekids = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->parent != curproc)
-        continue;
-      cprintf("\np->pgdir: %u", p->pgdir);
-      cprintf("\ncurproc->pgdir: %u", curproc->pgdir);
-      
+        continue;      
   
       if (p->pgdir != curproc->pgdir)
         continue;
