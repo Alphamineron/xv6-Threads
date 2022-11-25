@@ -40,7 +40,7 @@ void* malloc(uint);
 void free(void*);
 int atoi(const char*);
 int thread_create(void (*)(void *, void *), void *, void *);
-int thread_join(void);
+int thread_join();          // REMOVED void argument
 void lock_acquire(lock_t*);
 void lock_release(lock_t*);
 void lock_init(lock_t*);

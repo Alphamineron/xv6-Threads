@@ -90,8 +90,7 @@ sys_uptime(void)
   return xticks;
 }
 
-// TODO:
-// Args: func Ptr, 3 void ptr
+
 int
 sys_clone(void)
 {
@@ -100,7 +99,7 @@ sys_clone(void)
   void *arg2;
   void *stack;
 
-  if ((argptr(0, (void*)&fcn, sizeof(void*)) < 0) || (argptr(1, (void*)&arg1, sizeof(void*)) < 0) || (argptr(2, (void*)&arg2, sizeof(void*)) < 0) || (argptr(3, (void*)&stack, sizeof(void*)) < 0)) {
+  if ((argptr(0, (void*)&fcn, sizeof(void*)) < 0) || (argptr(1, (void*)&arg1, sizeof(void*)) < 0) || (argptr(2, (void*)&arg2, sizeof(void*)) < 0) || (argptr(3, (void*)&stack, PGSIZE) < 0)) {
     return -1;
   }
 
@@ -112,7 +111,7 @@ int
 sys_join(void)
 {
   void **stack = 0;
-  if(argptr(0, (void*)&stack, sizeof(void**)) < 0) {
+  if(argptr(0, (void*)&stack, sizeof(void*)) < 0) {
     return -1;
   }
   return join(stack);
