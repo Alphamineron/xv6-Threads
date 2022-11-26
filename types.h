@@ -6,3 +6,9 @@ typedef uint pde_t;
 typedef struct __lock_t {
     int value;
 } lock_t;
+
+typedef struct ptr_struct {
+  int busy;
+  void *stack;
+  void *ptr;
+} thr_table;

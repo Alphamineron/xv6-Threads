@@ -1,4 +1,5 @@
-# xv6-Threads
+# CS537: xv6-Threads
+**[Ankur Singh](https://github.com/Alphamineron) & [Rebecca Brown](https://github.com/rabrown22)**
 
 ## TODOs
 * ## System Calls
