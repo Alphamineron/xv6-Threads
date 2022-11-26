@@ -110,8 +110,8 @@ memmove(void *vdst, const void *vsrc, int n)
 // ========================
 
 void lock_acquire(lock_t* lock) {
-  while (lock->value);
-  lock->value = 1;
+  while(xchg(&lock->value, 1) != 0)
+  ;
 }
 
 void lock_release(lock_t* lock) {
