@@ -155,6 +155,7 @@ userinit(void)
 
 // Grow current process's memory by n bytes.
 // Return 0 on success, -1 on failure.
+// TODO: MAKE IT GROW THREAD MEMORY TOO
 int
 growproc(int n)
 {
@@ -269,6 +270,8 @@ exit(void)
 
 // Wait for a child process to exit and return its pid.
 // Return -1 if this process has no children.
+// TODO: Make it work for threads
+// TODO: MAKE IT SO WAIT DOESN'T FREE ZOMBIE THREAD MEMORY WHILE OTHER THREADS ARE ACTIVE 
 int
 wait(void)
 {
@@ -533,9 +536,10 @@ procdump(void)
   }
 }
 
-// TODO:
-int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
-
+// TODO: TO BE CLEANED
+int 
+clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack)
+{
   int i, pid;
   struct proc *np;
   struct proc *curproc = myproc();
@@ -545,35 +549,53 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
     return -1;
   
   // check stack pointer
-  if ((((uint)stack % PGSIZE) != 0) || ((curproc->sz - (uint)stack) < PGSIZE)) {
+  // if ((((uint)stack % PGSIZE) != 0) || ((curproc->sz - (uint)stack) < PGSIZE)) {
+  //   return -1;
+  // }
+  // Check if stack is page aligned
+  if((uint)stack % PGSIZE != 0)
     return -1;
-  }
 
   // copy process page directory
   np->pgdir = curproc->pgdir;
-
-  uint ustack[4];
-  // uint sp = (uint)stack + PGSIZE;
-
-  ustack[0] = 0xffffffff;   // fake return PC
-  ustack[1] = (uint)arg1;
-  ustack[2] = (uint)arg2;
-  ustack[3] = 0;
-  
-  stack -= 16;
-
-  if(copyout(np->pgdir, (uint)stack, ustack, 16) < 0)
-    return -1;
-
   // Copy Process Details To Thread 
   np->sz = curproc->sz;
   np->parent = curproc;
   *np->tf = *curproc->tf;
 
+// ========================================================
+// ========================================================
+// ========================================================
+  // uint ustack[4];
+  uint* sp = (uint*)((stack) + PGSIZE);   // Pushing Stack Address Forward As Stack Grows Negatively, then casting to match sp datatype
+
+  sp--;                 // Shifting Addr Back by sizeof(uint), Ptr Arthemetics
+  *(sp) = (uint)arg2;
+  sp--;
+  *(sp) = (uint)arg1;
+  sp--;
+  *(sp) = 0xffffffff;
+  // ustack[0] = 0xffffffff;   // fake return PC
+  // ustack[1] = (uint)arg1;
+  // ustack[2] = (uint)arg2;
+  // ustack[3] = 0;
+  
+  // stack -= 16;
+
+  // if(copyout(np->pgdir, (uint)stack, ustack, 16) < 0)
+    // return -1;
+
+
+// ========================================================
+// ========================================================
+// ========================================================
+
   // FROM FORK(): Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
   np->tf->eip = (uint)fcn;
-  np->tf->esp = (uint)stack;
+  np->tf->esp = (uint)sp;
+  np->tf->ebp = np->tf->esp;
+  np->ustack = stack;
 
   for(i = 0; i < NOFILE; i++)
     if(curproc->ofile[i])
@@ -589,7 +611,9 @@ int clone(void(*fcn)(void *, void *), void *arg1, void *arg2, void *stack){
   return pid;
 }
 
-int join(void **stack){
+int 
+join(void **stack)
+{
   struct proc *p;
   int havekids, pid;
   struct proc *curproc = myproc();
@@ -598,26 +622,26 @@ int join(void **stack){
   for(;;){
     // Scan through table looking for exited children.
     havekids = 0;
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->parent != curproc)
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+      if(p->parent != curproc || p->pgdir != curproc->pgdir)
         continue;      
-  
-      if (p->pgdir != curproc->pgdir)
-        continue;
       
       havekids = 1;
       if(p->state == ZOMBIE){
-        // Found one
+        // Found one, Grab Data
+        *stack = p->ustack;
         pid = p->pid;
+
+        // Free Stuff
+        p->ustack = 0;
         kfree(p->kstack);
         p->kstack = 0;
-        freevm(p->pgdir);
+        // freevm(p->pgdir);
         p->pid = 0;
         p->parent = 0;
         p->name[0] = 0;
         p->killed = 0;
         p->state = UNUSED;
-        // stack = (void*)p->tf->esp;
         release(&ptable.lock);
         return pid;
       }
