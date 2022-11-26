@@ -158,6 +158,10 @@ int             fetchint(uint, int*);
 int             fetchstr(uint, char**);
 void            syscall(void);
 
+// sysproc.c
+extern struct spinlock growproc_lock;
+
+
 // timer.c
 void            timerinit(void);
 

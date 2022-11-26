@@ -20,10 +20,14 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
+struct spinlock growproc_lock;
+
+
 void
 pinit(void)
 {
   initlock(&ptable.lock, "ptable");
+  initlock(&growproc_lock, "growproc_lock");
 }
 
 // Must be called with interrupts disabled
